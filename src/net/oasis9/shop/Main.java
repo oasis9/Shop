@@ -5,11 +5,21 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.craftbukkit.v1_8_R3.entity.CraftPlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class Main extends JavaPlugin {
+import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_8_R3.IChatBaseComponent.ChatSerializer;
+import net.minecraft.server.v1_8_R3.PacketPlayOutChat;
+
+public class Main extends JavaPlugin implements Listener {
 
 	public static Map<UUID, Integer> coins = new HashMap<UUID, Integer>();
 	private static FileConfiguration config;
@@ -19,11 +29,33 @@ public class Main extends JavaPlugin {
 		instance = this;
 		config = getConfig();
 		if (!config.isConfigurationSection("items")) {
-			config.set("items.Diamond.cost", 300);
-			config.set("items.Diamond.material", "DIAMOND");
+			config.set("items.&bDiamond.cost", 300);
+			config.set("items.&bDiamond.material", "DIAMOND");
+			config.set("items.&bDiamond.amount", 10);
+			config.set("items.&bDiamond.data", 0);
+			saveConfig();
 		}
 		ShopItem.loadItems(config);
-		getServer().getPluginManager().registerEvents(new InventoryManager(), this);
+		getServer().getPluginManager().registerEvents(this, this);
+	}
+	
+	@EventHandler
+	public void inventoryClick(InventoryClickEvent e) {
+		InventoryManager.inventoryClick(e);
+	}
+	
+	@Override
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+		if (!(sender instanceof Player)) {
+			sender.sendMessage("You cannot use this command!");
+			return true;
+		}
+		Player pl = (Player) sender;
+		if (cmd.getName().equalsIgnoreCase("shop"))
+			InventoryManager.openShop(pl, 0);
+		else if (cmd.getName().equalsIgnoreCase("spawn"))
+			FakePlayer.spawnShop(pl.getLocation());
+		return true;
 	}
 	
 	public static String getShopName() {
@@ -36,7 +68,7 @@ public class Main extends JavaPlugin {
 		UUID uuid = pl.getUniqueId();
 		if (coins.containsKey(uuid))
 			return coins.get(uuid);
-		else setCoins(pl, 0);
+		else Main.coins.put(uuid, 0);
 		return 0;
 	}
 	
@@ -49,7 +81,7 @@ public class Main extends JavaPlugin {
 		UUID uuid = pl.getUniqueId();
 		if (Main.coins.containsKey(uuid))
 			Main.coins.put(uuid, Main.coins.get(uuid) + coins);
-		else setCoins(pl, coins);
+		else Main.coins.put(uuid, coins);
 		instance.save();
 	}
 	
@@ -57,6 +89,11 @@ public class Main extends JavaPlugin {
 		for (Entry<UUID, Integer> coinData : coins.entrySet())
 			config.set("coins." + coinData.getKey(), coinData.getValue());
 		saveConfig();
+	}
+	
+	public static void actionBar(Player pl, String message) {
+		PacketPlayOutChat msg = new PacketPlayOutChat(ChatSerializer.a("{text:\"" + ChatColor.translateAlternateColorCodes('&', message) + "\"}"), (byte) 2);
+		((CraftPlayer) pl).getHandle().playerConnection.sendPacket(msg);
 	}
 	
 	public static boolean tryParseInt(String value) {  

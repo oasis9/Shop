@@ -1,6 +1,6 @@
 name: Shop
-main: Shop.Main
+main: net.oasis9.shop.Main
 version: 1
 commands:
   shop:
-  npc:
+  spawn:
