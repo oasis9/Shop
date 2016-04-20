@@ -13,14 +13,14 @@ public class ShopItem {
 	private ItemStack item;
 	private int cost;
 	
-	public ShopItem(String name, Material material, int amount, byte data, int cost) {
+	public ShopItem(InventoryManager inventoryManager, String name, Material material, int amount, byte data, int cost) {
 		this.name = ChatColor.translateAlternateColorCodes('&', name);
 		this.cost = cost;
 		item = new ItemStack(material, amount, data);
 		ItemMeta meta = item.getItemMeta();
 		meta.setDisplayName(name);
 		item.setItemMeta(meta);
-		InventoryManager.addItem(this);
+		inventoryManager.addItem(this);
 	}
 	
 	public String getName() {
@@ -35,7 +35,7 @@ public class ShopItem {
 		return cost;
 	}
 	
-	public static void loadItems(FileConfiguration config) {
+	public static void loadItems(InventoryManager inventoryManager, FileConfiguration config) {
 		try {
 			ConfigurationSection items = config.getConfigurationSection("items");
 			for (String key : items.getKeys(false))
@@ -50,7 +50,7 @@ public class ShopItem {
 						amount = 1;
 					Byte data = (byte) cs.getInt("data");
 					Integer cost = cs.getInt("cost");
-					new ShopItem(name, material, amount, data, cost);
+					new ShopItem(inventoryManager, name, material, amount, data, cost);
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
